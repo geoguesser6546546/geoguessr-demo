@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoGuessr Demo Clone</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { font-family: sans-serif; margin: 0; }
+    #image-container { text-align: center; padding: 1rem; }
+    #image-container img { width: 80vw; max-width: 800px; height: auto; border-radius: 8px; }
+    #map { height: 500px; width: 100%; }
+    #results { text-align: center; padding: 1rem; font-size: 1.2rem; }
+    #guess-btn { margin: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div id="image-container">
+    <h2>Where is this place?</h2>
+    <img id="location-image" src="" alt="Guess the location" />
+  </div>
+  <div id="map"></div>
+  <div style="text-align: center">
+    <button id="guess-btn">Make a Guess</button>
+  </div>
+  <div id="results"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const locations = [
+      {
+        img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/New_York_City_at_night_HDR_edit1.jpg",
+        lat: 40.7128,
+        lng: -74.0060,
+      },
+      {
+        img: "https://upload.wikimedia.org/wikipedia/commons/6/65/Paris_-_Eiffelturm_und_Marsfeld2.jpg",
+        lat: 48.8584,
+        lng: 2.2945,
+      },
+      {
+        img: "https://upload.wikimedia.org/wikipedia/commons/b/b6/Sydney_Opera_House_-_Dec_2008.jpg",
+        lat: -33.8568,
+        lng: 151.2153,
+      },
+      {
+        img: "https://upload.wikimedia.org/wikipedia/commons/e/e1/Tokyo_Tower_and_around_Skyscrapers.jpg",
+        lat: 35.6586,
+        lng: 139.7454,
+      },
+      {
+        img: "https://upload.wikimedia.org/wikipedia/commons/0/08/Cape_Town_CBD%2C_Table_Mountain%2C_Devil%27s_Peak.jpg",
+        lat: -33.9249,
+        lng: 18.4241,
+      }
+    ];
+
+    let currentLocation;
+    let guessMarker;
+
+    const map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    map.on('click', function (e) {
+      if (guessMarker) map.removeLayer(guessMarker);
+      guessMarker = L.marker(e.latlng).addTo(map);
+      guessMarker.bindPopup("Your Guess").openPopup();
+    });
+
+    function randomLocation() {
+      const idx = Math.floor(Math.random() * locations.length);
+      currentLocation = locations[idx];
+      document.getElementById("location-image").src = currentLocation.img;
+      document.getElementById("results").textContent = "";
+      if (guessMarker) map.removeLayer(guessMarker);
+    }
+
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    document.getElementById("guess-btn").addEventListener("click", function () {
+      if (!guessMarker) {
+        alert("Click on the map to make a guess!");
+        return;
+      }
+      const guess = guessMarker.getLatLng();
+      const distance = haversineDistance(guess.lat, guess.lng, currentLocation.lat, currentLocation.lng);
+      document.getElementById("results").textContent = `You were ${distance.toFixed(2)} km away!`;
+      L.marker([currentLocation.lat, currentLocation.lng]).addTo(map).bindPopup("Actual Location").openPopup();
+    });
+
+    randomLocation();
+  </script>
+</body>
+</html>
